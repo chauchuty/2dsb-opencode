@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INES WORLD · 1-1 · LOGIN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  /* ===== Paleta pastel: vermelho · preto · branco (menta no dino) ===== */
+  :root{
+    --red:#e76a6a; --red-dark:#c24747; --red-soft:#f4b6b6;
+    --black:#1c1a1e; --black-soft:#3a353c;
+    --white:#fffaf5; --sky:#ffe4d6; --ground:#d9b6b0;
+    --mint:#a9e3b8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Press Start 2P',monospace;
+    background:var(--sky); color:var(--black);
+    min-height:100vh; min-height:100svh;
+    display:flex; flex-direction:column;
+    overflow-x:hidden; image-rendering:pixelated;
+  }
+
+  /* ===== CENÁRIO ===== */
+  .scene{flex:1; position:relative; overflow:hidden; min-height:52vh}
+  .ground{
+    position:absolute; bottom:0; left:0; width:100%; height:88px;
+    background:var(--ground); border-top:5px solid var(--black);
+  }
+  .ground::before{
+    content:""; position:absolute; inset:5px 0 0;
+    background-image:
+      linear-gradient(90deg,#b3938e 0 6px,transparent 6px 24px),
+      linear-gradient(0deg,transparent 0 18px,#b3938e 18px 22px,transparent 22px);
+    background-size:24px 22px;
+  }
+
+  /* nuvem SMW com carinha */
+  .cloud{position:absolute; width:150px; height:76px; z-index:1;
+    filter:drop-shadow(3px 3px 0 rgba(0,0,0,.12))}
+  .cloud>i{position:absolute; background:var(--white); border:3px solid var(--black-soft)}
+  .cloud .b1{width:52px;height:32px;left:6px;bottom:12px}
+  .cloud .b2{width:64px;height:44px;left:40px;bottom:18px}
+  .cloud .b3{width:52px;height:32px;left:92px;bottom:12px}
+  .cloud .face{border:none;bottom:4px;left:58px;background:transparent;
+    width:34px;height:20px}
+  .cloud .face::before{content:"";position:absolute;width:6px;height:9px;
+    background:var(--black);left:6px;top:0;box-shadow:15px 0 0 var(--black)}
+  .cloud .face::after{content:"";position:absolute;width:10px;height:5px;
+    border:3px solid var(--black);border-top:none;border-left:none;
+    left:5px;top:9px;transform:rotate(38deg)}
+  .c1{top:8%;left:4%;animation:drift 90s linear infinite}
+  .c2{top:30%;left:78%;animation:drift 110s linear infinite}
+  .c3{top:2%;left:44%;transform:scale(.7)}
+  .c3{animation:drift 130s linear infinite}
+  @keyframes drift{from{translate:-170px 0}to{translate:calc(100vw + 170px) 0}}
+
+  /* blocos ? e tijolos */
+  .blocks{position:absolute; bottom:38%; left:0; width:100%; z-index:2}
+  .block{position:absolute; width:44px; height:44px; background:var(--red);
+    border:4px solid var(--black); box-shadow:inset -6px -6px 0 var(--red-dark);
+    display:grid; place-items:center; color:var(--white); font-size:18px}
+  .bq{left:20%; animation:hop 2.6s steps(2) infinite}
+  .bq2{left:70%; animation:hop 2.6s steps(2) .8s infinite}
+  .brick{background:var(--black-soft); box-shadow:inset -6px -6px 0 var(--black)}
+  .bk1{left:calc(20% + 44px)}
+  .bk2{left:calc(70% - 44px)}
+  @keyframes hop{0%,100%{transform:translateY(0)}12%{transform:translateY(-14px)}24%{transform:translateY(0)}}
+
+  /* moedas */
+  .coinsprite{position:absolute; bottom:26%; width:14px; height:20px; z-index:2;
+    background:var(--white); border:3px solid var(--black);
+    animation:coinflip .55s steps(4) infinite}
+  .mc2,.mc4{animation-delay:.25s}
+  @keyframes coinflip{50%{transform:scaleX(.15)}}
+  .mc1{left:15%} .mc2{left:23%} .mc3{left:52%} .mc4{left:63%}
+
+  /* bandeira de fim de fase */
+  .flag{position:absolute; bottom:88px; left:88%; z-index:1}
+  .flag .pole{width:8px; height:180px; background:var(--white); border:3px solid var(--black)}
+  .flag .ball{position:absolute; top:22px; left:-2px; width:14px; height:14px;
+    background:var(--red); border:3px solid var(--black)}
+  .flag .panel{position:absolute; top:40px; left:11px; width:34px; height:26px;
+    background:var(--red); border:3px solid var(--black);
+    clip-path:polygon(0 0,100% 0,0 100%)}
+
+  /* morros de fundo */
+  .hill{position:absolute; bottom:0; width:220px; height:90px; background:var(--red-soft);
+    border:4px solid var(--black); border-bottom:none; z-index:0;
+    clip-path:polygon(0 100%,8% 42%,20% 26%,34% 14%,50% 0,66% 14%,80% 26%,92% 42%,100% 100%)}
+  .h2{left:28%; transform:scale(.7);height:80px}
+  .h3{left:74%; width:260px}
+
+  /* atores (canvas sprites) */
+  .actor{position:absolute; bottom:86px; z-index:3; pointer-events:none}
+  .actor canvas{image-rendering:pixelated; display:block}
+
+  /* ===== CARD DE LOGIN ===== */
+  .card{
+    position:absolute; z-index:5;
+    left:50%; top:44%; transform:translate(-50%,-50%);
+    width:min(92vw,380px);
+    background:var(--white);
+    border:5px solid var(--black);
+    box-shadow:0 0 0 4px var(--red), 10px 10px 0 4px var(--black);
+    padding:1.6rem 1.2rem 1.4rem; text-align:center;
+  }
+  .card.shake{animation:shake .35s steps(3)}
+  @keyframes shake{
+    25%{transform:translate(calc(-50% - 8px),-50%)}
+    50%{transform:translate(calc(-50% + 8px),-50%)}
+    75%{transform:translate(calc(-50% - 4px),-50%)}
+  }
+  .world{font-size:11px; letter-spacing:2px; color:var(--red-dark)}
+  .world small{display:block; font-size:8px; color:var(--black); margin-top:.4rem}
+  .form{display:grid; gap:.9rem; margin-top:1rem; text-align:left}
+  .field label{font-size:8px; color:var(--red-dark); display:block; margin-bottom:.35rem}
+  .field input{
+    width:100%; font-family:'Press Start 2P',monospace; font-size:10px;
+    background:var(--white); border:3px solid var(--black);
+    padding:.6rem .7rem; color:var(--black); outline:none;
+  }
+  .field input:focus{background:#ffe9e9}
+  .btn{
+    font-family:'Press Start 2P',monospace; font-size:11px; cursor:pointer;
+    color:var(--white); background:var(--red);
+    border:3px solid var(--black); box-shadow:0 5px 0 var(--black);
+    padding:.8rem; margin-top:.4rem;
+  }
+  .btn:hover{background:var(--red-dark)}
+  .btn:active{transform:translateY(5px); box-shadow:none}
+  .hint{font-size:7px; color:var(--black); opacity:.65; margin-top:.8rem; line-height:1.8}
+  .msg{min-height:1.6rem; margin-top:.6rem; font-size:9px}
+  .msg.err{color:var(--red-dark)}
+  .msg.ok{color:var(--black)}
+  .jump{animation:jump .55s steps(5) forwards}
+  @keyframes jump{to{transform:translate(-50%,-42vh)}}
+
+  .hud{
+    position:absolute; top:10px; left:12px; right:12px; z-index:4;
+    display:flex; justify-content:space-between; font-size:9px; color:var(--black);
+  }
+  .coincount span{color:var(--red-dark)}
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="ground"></div>
+  <div class="hill h2"></div><div class="hill h3"></div>
+  <div class="cloud c2"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="face"></i></div>
+  <div class="cloud c3"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="face"></i></div>
+  <div class="cloud c1"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="face"></i></div>
+  <div class="blocks">
+    <div class="block bq">?</div><div class="block brick bk1"></div>
+    <div class="block bq2">?</div><div class="block brick bk2"></div>
+  </div>
+  <div class="coinsprite mc1"></div><div class="coinsprite mc2"></div>
+  <div class="coinsprite mc3"></div><div class="coinsprite mc4"></div>
+  <div class="flag"><div class="ball"></div><div class="pole"></div><div class="panel"></div></div>
+</div>
+
+<div class="hud">
+  <div>INES<div class="coincount"><span>©x</span><em id="coins">00</em></div></div>
+  <div>WORLD<br>1 - 1</div>
+  <div>LOG<div>TIME <em id="time">999</em></div></div>
+</div>
+
+<form class="card" id="card" autocomplete="off">
+  <div class="world">INES WORLD<small>FASE: LOGARITMO · PRESS START</small></div>
+  <div class="form">
+    <div class="field">
+      <label for="user">USUARIO</label>
+      <input id="user" type="text" required>
+    </div>
+    <div class="field">
+      <label for="pass">SENHA</label>
+      <input id="pass" type="password" required>
+    </div>
+  </div>
+  <button class="btn" type="submit">▶ START</button>
+  <div class="msg" id="msg"></div>
+  <div class="hint">← → ANDA · ↑ PULA<br>* CABEÇADA NO ▶ START = LOGAR (admin/admin) *</div>
+</form>
+
+<script>
+'use strict';
+/* ============================================================
+   MOTOR DE SPRITES — pixel art estilo SNES, desenhada mapa a mapa
+   ============================================================ */
+const PAL={
+  r:'#e76a6a',  /* vermelho pastel      */
+  d:'#c24747',  /* vermelho sombra      */
+  w:'#fffaf5',  /* branco               */
+  k:'#1c1a1e',  /* preto contorno       */
+  s:'#3a353c',  /* preto suave (macacão)*/
+  m:'#a9e3b8',  /* menta dino           */
+  n:'#7cc294',  /* menta sombra         */
+  '.':null
+};
+function spriteCanvas(map, scale){
+  const h=map.length, w=map[0].length;
+  const cv=document.createElement('canvas');
+  cv.width=w*scale; cv.height=h*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  map.forEach((row,y)=>[...row].forEach((ch,x)=>{
+    const cor=PAL[ch];
+    if(cor){g.fillStyle=cor; g.fillRect(x*scale,y*scale,scale,scale);}
+  }));
+  return cv;
+}
+
+/* ---------- HERÓI (boneco de boné, 2 frames de caminhada) ---------- */
+const HEROI_A=[
+'....rrrrr....',
+'...rrrrrrrr..',
+'...sskwwkww..',
+'..kwkwwwwkkw.',
+'..kwkkwwwwkw.',
+'...wsswwww...',
+'..ssssssssss.',
+'.ssssssssssss',
+'.wwkssssksww.',
+'.wwkssssskww.',
+'...ssrrrss...',
+'...rrrrrrr...',
+'..rrr.r.rrr..',
+'..ss.....ss..',
+'.....ssss....'];
+const HEROI_B=[
+'....rrrrr....',
+'...rrrrrrrr..',
+'...sskwwkww..',
+'..kwkwwwwkkw.',
+'..kwkkwwwwkw.',
+'...wsswwww...',
+'..ssssssssss.',
+'.ssssssssssss',
+'.wwkssssksww.',
+'.wwkssssskww.',
+'...ssrrrss...',
+'....rrrrr....',
+'...rrr.rrr...',
+'.........ss..',
+'..ss.....ss..'];
+
+/* ---------- DINO MONTARIA (2 frames) ---------- */
+const DINO_A=[
+'....kkkk.........',
+'...kmmmmk...kkk..',
+'..kmmmwwmkk.kmmk.',
+'..kmwkmwwkmkmmm..',
+'.kmmwkmwkmmkmm...',
+'.kmmwmkmwwmm.....',
+'.kkmwkmwwmk......',
+'.kmmmwwmkm.......',
+'..kmmmmmk........',
+'...kkkkmkkkk.....',
+'..knnnkmnmmk.....',
+'.knnnnkkmnnk.....',
+'.kkkkkkkkkkkk....'];
+const DINO_B=[
+'....kkkk.........',
+'...kmmmmk...kkk..',
+'..kmmmwwmkk.kmmk.',
+'..kmwkmwwkmkmmm..',
+'.kmmwkmwkmmkmm...',
+'.kmmwmkmwwmm.....',
+'.kkmwkmwwmk......',
+'.kmmmwwmkm.......',
+'..kmmmmmk........',
+'...kkkkmkkkk.....',
+'...knnkmnmmk.....',
+'..knnnnmkkmnk....',
+'.kk.kkkkkkkkkk...'];
+
+/* ---------- INIMIGO BOLHA BRAVA (2 frames pés) ---------- */
+const INI_A=[
+'....kkkkkk....',
+'..kkddddddkk..',
+'.kdwwdddddddk.',
+'.kwwwkdwwkddk.',
+'.kwwwkdwwkddk.',
+'.kdddddddddddk',
+'.dddddddddddd.',
+'.kdddddddddk..',
+'..kkkkkkkkkk..',
+'.kk.kkkkkk.kk.'];
+const INI_B=[
+'....kkkkkk....',
+'..kkddddddkk..',
+'.kdwwdddddddk.',
+'.kwwwkdwwkddk.',
+'.kwwwkdwwkddk.',
+'.kdddddddddddk',
+'.dddddddddddd.',
+'.kdddddddddk..',
+'..kkkkkkkkkk..',
+'..kk.kkkk.kk..'];
+
+/* ============================================================
+   PALCO
+   ============================================================ */
+const SCALE=4, CHAO=86;
+const scene=document.querySelector('.scene');
+
+function spawn(map,scale,x){
+  const div=document.createElement('div');
+  div.className='actor';
+  div.style.left=x+'px';
+  div.appendChild(spriteCanvas(map,scale));
+  scene.appendChild(div);
+  return {el:div,frame:0,map,scale};
+}
+function setFrame(a,map){
+  const f=JSON.stringify(map);
+  if(a._key!==f){
+    a._key=f;
+    a.el.replaceChild(spriteCanvas(map,a.scale), a.el.firstChild);
+  }
+}
+
+const heroi=spawn(HEROI_A,SCALE,10);
+const dino =spawn(DINO_A,SCALE,90);
+const ini  =spawn(INI_A,SCALE,Math.max(200,innerWidth*0.7));
+
+/* HUD */
+const coinsEls=[...document.querySelectorAll('.coinsprite')];
+let coinsGot=0;
+const coinsHud=document.getElementById('coins');
+function updCoins(){coinsHud.textContent=String(Math.min(coinsGot,99)).padStart(2,'0');}
+
+/* tempo estilo SMW piscando ao fim */
+let tempo=999; const timeEl=document.getElementById('time');
+setInterval(()=>{
+  tempo--;
+  if(tempo<=100) timeEl.style.color='#c24747';
+  else timeEl.style.color='inherit';
+  timeEl.textContent=tempo>0?tempo:0;
+  if(tempo<=0) tempo=999;
+},1000);
+
+/* ---- HERÓI CONTROLÁVEL: ← → andam, ↑ / espaço pula ---- */
+const GRAV=0.7, PULO=17;
+const heroS={x:10, y:0, vyy:0, noChao:true, dir:1}; /* y = altura acima do chão */
+let tick=0, walkT=0;
+const teclas={};
+
+function pular(){
+  if(heroS.noChao){ heroS.vyy=PULO; heroS.noChao=false; }
+}
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return; /* digitando? herói fica quieto */
+  const k=e.key.toLowerCase();
+  if(k==='arrowleft'||k==='a'){ teclas.left=true;  heroS.dir=-1; e.preventDefault(); }
+  if(k==='arrowright'||k==='d'){ teclas.right=true; heroS.dir=1;  e.preventDefault(); }
+  if(k==='arrowup'||k==='w'||k===' '){ pular(); e.preventDefault(); }
+});
+addEventListener('keyup',e=>{
+  if(e.target.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  if(k==='arrowleft'||k==='a')  teclas.left=false;
+  if(k==='arrowright'||k==='d') teclas.right=false;
+});
+/* no toque: qualquer clique/toque no cenário = pulinho */
+scene.addEventListener('pointerdown',pular);
+
+/* botão START é o "bloco" que recebe a cabeçada */
+const btnStart=document.querySelector('#card .btn');
+let bonkCd=0;
+
+function loop(){
+  tick++;
+
+  /* --- física do herói --- */
+  if(teclas.left)  heroS.vx=-2.1, heroS.dir=-1;
+  else if(teclas.right) heroS.vx=2.1, heroS.dir=1;
+  else heroS.vx=0;
+
+  heroS.x=Math.max(-6,Math.min(innerWidth-60, heroS.x+heroS.vx));
+
+  if(!heroS.noChao){
+    heroS.y+=heroS.vyy;
+    heroS.vyy-=GRAV;
+  }
+
+  /* cabeçada no START: subindo e cruzando a face do botão */
+  const br=btnStart.getBoundingClientRect();
+  const sc=scene.getBoundingClientRect();
+  const heroTopScreen=sc.bottom - 88 - heroS.y - 60; /* topo da cabeça */
+  if(heroS.vyy>0 && bonkCd===0 &&
+     heroS.x+44>br.left && heroS.x<br.right &&
+     heroTopScreen>br.top-10 && heroTopScreen<br.bottom){
+    bonk();
+    heroS.vyy=-3; /* quica de volta */
+  }
+  if(heroS.y<=0){ heroS.y=0; heroS.vyy=0; heroS.noChao=true; }
+  if(bonkCd>0) bonkCd--;
+
+  /* --- render herói --- */
+  const movendo=heroS.vx!==0 && heroS.noChao;
+  if(movendo) walkT++;
+  const walkFrame=movendo ? Math.floor(walkT/8)%2 : 0;
+  heroi.el.style.left=heroS.x+'px';
+  heroi.el.style.bottom=(CHAO+heroS.y|0)+'px';
+  heroi.el.style.transform=(heroS.dir<0?'scaleX(-1)':'').trim();
+  setFrame(heroi, walkFrame?HEROI_B:HEROI_A);
+
+  /* dino acompanha o dono */
+  const dinoX=Math.max(-6,Math.min(innerWidth-90, heroS.x-heroS.dir*78));
+  dino.el.style.left=dinoX+'px';
+  dino.el.style.transform=heroS.dir<0?'scaleX(-1)':'';
+  setFrame(dino, movendo&&Math.floor(walkT/8)%2 ? DINO_B:DINO_A);
+
+  /* inimigo sempre patrulha */
+  ini.xPos=(ini.xPos===undefined?ini.el.offsetLeft:ini.xPos)-0.9;
+  if(ini.xPos<-60) ini.xPos=innerWidth;
+  ini.el.style.left=ini.xPos+'px';
+  setFrame(ini, Math.floor(tick/20)%2 ? INI_B:INI_A);
+  ini.el.style.bottom=(CHAO+(tick%28<14?0:3))+'px';
+
+  /* coleta de moedas pelo herói */
+  coinsEls.forEach(c=>{
+    if(c.dataset.got!=='1' && Math.abs(c.offsetLeft-heroS.x)<20 && heroS.y<40){
+      c.dataset.got='1'; c.style.opacity='0'; c.style.scale='0';
+      coinsGot++; updCoins();
+      setTimeout(()=>{c.dataset.got='';c.style.opacity='1';c.style.scale='1';},1500);
+    }
+  });
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* cabeçada => tenta submeter o formulário (admin:admin pré-carregado) */
+function bonk(){
+  bonkCd=30; /* evita bombardeio de submits */
+  const bt=btnStart;
+  bt.style.transform='translateY(5px)';  /* botão afunda como bloco */
+  bt.style.boxShadow='none';
+  setTimeout(()=>{bt.style.transform='';bt.style.boxShadow='';},220);
+  if(!$('user').value) $('user').value='admin';
+  if(!$('pass').value) $('pass').value='admin';
+  card.requestSubmit();
+}
+
+/* ============================================================
+   LOGIN (admin:admin)
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const card=$('card'), msg=$('msg');
+card.addEventListener('submit',e=>{
+  e.preventDefault();
+  const u=$('user').value.trim(), p=$('pass').value.trim();
+  if(u==='admin' && p==='admin'){
+    msg.className='msg ok';
+    msg.textContent='★ LIFE UP! BEM-VINDO, GUERREIRO LOG ★';
+    try{localStorage.setItem('inesLogin','1');}catch(_){}
+    card.classList.add('jump'); // card "pula" pra fora da tela
+    setTimeout(()=>location.href='jogo.html',550);
+  }else{
+    msg.className='msg err';
+    msg.textContent='GAME OVER! credenciais erradas…';
+    card.classList.remove('shake'); void card.offsetWidth;
+    card.classList.add('shake');
+    if(navigator.vibrate) navigator.vibrate(120);
+    coinsGot=Math.max(0,coinsGot-1); updCoins(); // moeda perdida!
+  }
+});
+</script>
+</body>
+</html>

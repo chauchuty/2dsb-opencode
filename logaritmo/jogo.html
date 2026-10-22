@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INES QUEST · À Procura do Logaritmo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script>
+  // Guarda de login: só entra no jogo quem passou pela tela de login
+  try{
+    if(localStorage.getItem('inesLogin') !== '1'){
+      location.replace('index.html');
+    }
+  }catch(e){ location.replace('index.html'); }
+</script>
+<style>
+  :root{
+    --bg:#0d0b1f; --panel:#1a1444; --panel2:#241a5e;
+    --ink:#e9e6ff; --dim:#8d87c9;
+    --green:#4ade4a; --cyan:#57e8f5; --yellow:#ffd94a;
+    --pink:#ff5db1; --purple:#a78bfa; --red:#ff5555;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Press Start 2P',monospace;
+    background:var(--bg); color:var(--ink);
+    line-height:1.9; font-size:12px;
+    image-rendering:pixelated;
+    overflow-x:hidden;
+  }
+  /* Fundo estrelado pixel */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1;
+    background-image:
+      linear-gradient(transparent 95%, #ffffff22 95%),
+      radial-gradient(circle at 10% 20%, #5b4fd955 0 2px, transparent 3px),
+      radial-gradient(circle at 80% 60%, #8b5cf655 0 2px, transparent 3px),
+      radial-gradient(circle at 40% 80%, #57e8f544 0 2px, transparent 3px),
+      radial-gradient(circle at 90% 10%, #ffffff33 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 25% 45%, #ffffff22 0 1.5px, transparent 2.5px);
+  }
+
+  /* ===== Cabeçalho estilo capa de jogo ===== */
+  .hero{
+    text-align:center; padding:3rem 1rem 1.5rem; position:relative;
+  }
+  .hero .blink{animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .hero h1{
+    font-size:clamp(16px,5vw,34px); line-height:1.5;
+    color:var(--yellow);
+    text-shadow:3px 3px 0 #a06a00, 6px 6px 0 #00000088;
+  }
+  .hero h1 .c{color:var(--cyan); text-shadow:3px 3px 0 #0c7f8c, 6px 6px 0 #00000088}
+  .hero p{color:var(--dim); max-width:620px; margin:1rem auto 0; font-size:10px}
+  .pixel-sprite{display:inline-block; margin-bottom:.8rem}
+  .pixel-sprite canvas{image-rendering:pixelated}
+
+  /* ===== Barra de progresso do jogo ===== */
+  .xp-bar-wrap{max-width:700px; margin:1.2rem auto; padding:0 1rem}
+  .xp-bar{
+    border:3px solid #fff; background:#000; height:26px; position:relative;
+    box-shadow:0 0 0 3px #000;
+  }
+  .xp-fill{
+    height:100%; width:0%;
+    background:repeating-linear-gradient(90deg,var(--green) 0 8px, #2fbf2f 8px 12px);
+    transition:width .4s steps(6);
+  }
+  .xp-label{position:absolute; inset:0; display:grid; place-items:center; font-size:9px;
+    text-shadow:2px 2px 0 #000}
+
+  /* ===== Painéis: janelas de RPG ===== */
+  main{max-width:760px; margin:0 auto; padding:1rem; display:grid; gap:2rem}
+  .window{ /* cantos pixel: "mordidas" nos 4 cantos via sombra recortada */
+    --cut:8px;
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:4px solid #fff; box-shadow:0 0 0 4px #000, 0 8px 0 0 #00000066;
+    padding:1.2rem; position:relative;
+  }
+  .window::before{
+    content:""; position:absolute; inset:-4px; pointer-events:none;
+    background:
+      conic-gradient(at var(--cut) var(--cut), #0000 25%, #000 0)
+        top left / var(--cut) var(--cut) no-repeat border-box,
+      conic-gradient(at calc(100% - var(--cut)) var(--cut), #000 0 25%, #0000 0)
+        top right / var(--cut) var(--cut) no-repeat border-box,
+      conic-gradient(at var(--cut) calc(100% - var(--cut)), #000 0 25%, #0000 0)
+        bottom left / var(--cut) var(--cut) no-repeat border-box,
+      conic-gradient(at calc(100% - var(--cut)) calc(100% - var(--cut)), #0000 25%, #000 0)
+        bottom right / var(--cut) var(--cut) no-repeat border-box;
+  }
+  .window h2{
+    color:var(--yellow); font-size:13px; margin-bottom:1rem;
+    display:flex; align-items:center; gap:.6rem;
+    text-shadow:2px 2px 0 #7a5a00;
+  }
+  .window h2 .lv{background:#fff;color:#000;font-size:9px;padding:.25rem .5rem;
+    border:2px solid #000; flex:none}
+  .talk{color:var(--ink); font-size:10px; background:#00000055; border-left:6px solid var(--cyan);
+    padding:.7rem .8rem; margin-bottom:1rem}
+  .talk b{color:var(--cyan)}
+
+  /* fórmula 8-bit */
+  .formula{
+    background:#000; border:3px solid var(--purple); padding:.9rem; text-align:center;
+    font-size:13px; color:var(--green); text-shadow:0 0 8px #4ade4a88;
+    word-break:keep-all;
+  }
+  .formula .x{color:var(--cyan)} .formula .y{color:var(--pink)}
+
+  /* controles de gamepad */
+  .controls{display:grid; gap:1rem; margin:1.1rem 0}
+  .ctrl{display:flex; flex-direction:column; gap:.4rem}
+  .ctrl label{font-size:9px; color:var(--dim); display:flex; justify-content:space-between}
+  .ctrl output{color:var(--yellow); text-shadow:1px 1px 0 #000}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; height:14px; background:#000;
+    border:3px solid #fff; outline:3px solid #000; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:22px; height:22px; background:var(--pink);
+    border:3px solid #fff; box-shadow:0 3px 0 #000; cursor:grab;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:22px; height:22px; background:var(--pink); border:3px solid #fff;
+    border-radius:0; box-shadow:0 3px 0 #000;
+  }
+
+  .dialog{background:#0b0020; border:3px solid #444; padding:.8rem; font-size:10px;
+    margin-top:.8rem; min-height:3rem; color:var(--green)}
+  .dialog .arrow{color:var(--cyan); animation:blink 1s steps(2) infinite}
+
+  /* gráfico */
+  #chart{width:100%; image-rendering:pixelated; border:3px solid #fff;
+    box-shadow:0 0 0 3px #000; background:#0b0020; touch-action:none;
+    display:block; cursor:crosshair}
+
+  /* tabela propriedades */
+  table{width:100%; border-collapse:collapse; font-size:9px; background:#00000077}
+  th,td{padding:.5rem .3rem; text-align:center; border:2px solid #ffffff22}
+  th{color:var(--cyan); background:#000}
+  td.ok{color:var(--green)} td.err{color:var(--red)}
+
+  .prop-list{list-style:none; display:grid; gap:.6rem; margin-top:1rem; font-size:9px}
+  .prop-list li{background:#00000066; border-left:6px solid var(--yellow); padding:.6rem}
+  .prop-list code{color:var(--cyan)}
+
+  /* quiz boss */
+  .boss{display:flex; align-items:center; gap:1rem; margin-bottom:1rem}
+  .boss-sprite{font-size:26px; filter:drop-shadow(0 0 6px #ff5db1); }
+  .boss-sprite.shake{animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+  .hp-track{flex:1; border:3px solid #fff; box-shadow:0 0 0 3px #000; height:18px; background:#000}
+  .hp{height:100%; width:100%; background:repeating-linear-gradient(90deg,var(--red) 0 8px,#b91c1c 8px 12px);
+    transition:width .4s steps(5)}
+  .quiz-opt{
+    display:block; width:100%; text-align:left; font-family:'Press Start 2P',monospace;
+    font-size:10px; color:var(--ink); background:#000; border:3px solid #fff;
+    box-shadow:0 0 0 3px #000, 0 4px 0 #000; padding:.7rem .9rem; margin-top:.7rem; cursor:pointer;
+  }
+  .quiz-opt:hover{background:var(--panel2)}
+  .quiz-opt.ok{border-color:var(--green); color:var(--green)}
+  .quiz-opt.err{border-color:var(--red); color:var(--red); animation:shake .3s}
+  .result{margin-top:.8rem; font-size:10px; color:var(--yellow); min-height:2.5rem}
+
+  /* botão estilo gameboy */
+  .btn{
+    font-family:'Press Start 2P',monospace; font-size:10px; color:#000;
+    background:var(--green); border:3px solid #fff; box-shadow:0 0 0 3px #000, 0 5px 0 #000;
+    padding:.7rem 1.2rem; cursor:pointer; display:inline-block;
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 0 0 3px #000}
+
+  /* scanlines CRT */
+  .crt{
+    position:fixed; inset:0; z-index:50; pointer-events:none;
+    background:repeating-linear-gradient(0deg, transparent 0 2px, #00000022 2px 4px);
+    mix-blend-mode:overlay;
+  }
+  footer{text-align:center; color:var(--dim); font-size:9px; padding:1.5rem}
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) scale(0);
+    background:var(--yellow); color:#000; font-size:10px; padding:1rem 1.4rem;
+    border:3px solid #fff; box-shadow:0 0 0 3px #000; z-index:60;
+    transition:transform .25s steps(4); text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) scale(1)}
+</style>
+</head>
+<body>
+<div class="crt" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="pixel-sprite"><canvas id="sprite" width="16" height="16" style="width:64px;height:64px"></canvas></div>
+  <h1>INES&nbsp;QUEST<br><span class="c blink">▸ À PROVA DO LOGARITMO ◂</span></h1>
+  <p>Um RPG educativo onde você domina a arte do expoente.
+     Complete as 4 fases para derrotar o BOSS LOG.</p>
+  <div class="xp-bar-wrap">
+    <div class="xp-bar"><div class="xp-fill" id="xpFill"></div>
+      <span class="xp-label" id="xpLabel">XP 0/4</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- FASE 1 -->
+  <section class="window" id="fase1">
+    <h2><span class="lv">FASE 1</span> A DEFINIÇÃO SECRETA</h2>
+    <div class="talk"><b>INES</b>: "Logaritmo é um detetive invertido!
+      Ele pergunta: <b>qual expoente eu ponho na base pra produzir este número?</b>"</div>
+    <div class="formula"><b class="x">b</b><sup class="y">y</sup> = <span class="x">x</span> ⇔ log<sub class="x">b</sub>(x) = <span class="y">y</span></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>BASE b <output id="outB">2</output></label>
+        <input id="rB" type="range" min="2" max="10" step="1" value="2" aria-label="Base">
+      </div>
+      <div class="ctrl">
+        <label>EXPOENTE y <output id="outY">3</output></label>
+        <input id="rY" type="range" min="1" max="12" step="1" value="3" aria-label="Expoente">
+      </div>
+    </div>
+    <div class="dialog" id="resDef" aria-live="polite"></div>
+  </section>
+
+  <!-- FASE 2 -->
+  <section class="window" id="fase2">
+    <h2><span class="lv">FASE 2</span> O MAPA DA CURVA</h2>
+    <div class="talk"><b>INES</b>: "Mire no Mapa! Cada ponto revela o log.
+       Reposiciona com o mouse ou o dedo."</div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>BASE b <output id="outB2">2</output></label>
+        <input id="rB2" type="range" min="2" max="10" step="0.5" value="2" aria-label="Base do gráfico">
+      </div>
+    </div>
+    <canvas id="chart" height="320" role="img" aria-label="Gráfico pixelado do logaritmo"></canvas>
+    <div class="dialog" id="resGraf" aria-live="polite"></div>
+  </section>
+
+  <!-- FASE 3 -->
+  <section class="window" id="fase3">
+    <h2><span class="lv">FASE 3</span> OS 3 ENCANTOS</h2>
+    <div class="talk"><b>INES</b>: "Três encantos transformam operações!
+       Mexa nos valores e confira o feitiço funcionando."</div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>a <output id="outA">8</output></label>
+        <input id="rA" type="range" min="1" max="100" step="1" value="8" aria-label="Valor de a">
+      </div>
+      <div class="ctrl">
+        <label>b <output id="outBx">4</output></label>
+        <input id="rBx" type="range" min="1" max="100" step="1" value="4" aria-label="Valor de b">
+      </div>
+    </div>
+    <table aria-label="Verificação das propriedades">
+      <thead><tr><th>FEITIÇO</th><th>LADO 1</th><th>LADO 2</th><th>GOL!</th></tr></thead>
+      <tbody id="tbodyProp"></tbody>
+    </table>
+    <ul class="prop-list">
+      <li><b>PRODUTO:</b> <code>log(a·b) = log a + log b</code></li>
+      <li><b>QUOCIENTE:</b> <code>log(a/b) = log a − log b</code></li>
+      <li><b>POTÊNCIA:</b> <code>log(aᵏ) = k · log a</code></li>
+    </ul>
+  </section>
+
+  <!-- FASE 4 -->
+  <section class="window" id="fase4">
+    <h2><span class="lv">FASE 4</span> BATALHA FINAL · BOSS LOG</h2>
+    <div class="boss">
+      <div class="boss-sprite" id="bossSprite">👾</div>
+      <div class="hp-track"><div class="hp" id="bossHp"></div></div>
+    </div>
+    <div class="talk" id="quizP"></div>
+    <div id="quizOpts"></div>
+    <div class="result" id="quizRes" aria-live="polite"></div>
+    <button class="btn" id="btnAgain" style="display:none">PX. JOGAR DE NOVO</button>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<footer>INES QUEST v1.0 · MATHEMAGICA SYSTEMS · PX MANIA</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const logb = (x,b) => Math.log(x)/Math.log(b);
+const fmt = (n,d=2) => n.toLocaleString('pt-BR',{maximumFractionDigits:d});
+
+/* ---------- sprite pixel (guia INES) ---------- */
+(function(){
+  const c=$('sprite'), g=c.getContext('2d');
+  const rows=[
+    '..CC..',
+    '.CCCC.',
+    '.PAPP.',
+    '.APPP.',
+    '.PYYQ.',
+    '..RR..',
+    '.RRRR.',
+    '.R..R.'];
+  const map={C:'#ffd94a',P:'#a78bfa',A:'#000',Y:'#57e8f5',Q:'#ff5db1',R:'#fff'};
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{
+    if(map[ch]){g.fillStyle=map[ch];g.fillRect(x*2+2,y*2+1,2,2);}
+  }));
+})();
+
+/* ---------- XP ---------- */
+let unlocked = new Set();
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function unlock(fase,msg){
+  if(unlocked.has(fase))return;
+  unlocked.add(fase);
+  $('xpFill').style.width = (unlocked.size/4*100)+'%';
+  $('xpLabel').textContent = `XP ${unlocked.size}/4`;
+  toast('★ '+msg);
+}
+
+/* ---------- FASE 1: definição ---------- */
+function updDef(){
+  const b=+$('rB').value, y=+$('rY').value, x=b**y;
+  $('outB').textContent=b; $('outY').textContent=y;
+  $('resDef').innerHTML=`▸ ${b}^${y} = ${x.toLocaleString('pt-BR')} ⟹ log<sub>${b}</sub>(${x.toLocaleString('pt-BR')}) = ${y} <span class="arrow">▸</span>`;
+  if(x>=1024) unlock(1,'FASE 1 COMPLETA! Definição conquistada!');
+}
+$('rB').addEventListener('input',updDef);
+$('rY').addEventListener('input',updDef);
+updDef();
+
+/* ---------- FASE 2: gráfico pixel ---------- */
+const canvas=$('chart'), ctx=canvas.getContext('2d');
+let baseG=2, dragX=2, RANGE=40;
+const dpr=devicePixelRatio||1;
+function px(x){const w=canvas.clientWidth; return 12+x/RANGE*(w-22);}
+function py(y){const h=300; return h/2 - y*11;}
+function draw(){
+  canvas.width=canvas.clientWidth*dpr; canvas.height=300*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=canvas.clientWidth,h=300;
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#0b0020'; ctx.fillRect(0,0,w,h);
+  // grid pixel
+  ctx.fillStyle='#241a5e';
+  for(let i=0;i<w;i+=12)for(let j=0;j<h;j+=12) if((i+j)%24===0) ctx.fillRect(i,j,3,3);
+  // eixos
+  ctx.fillStyle='#8d87c9';
+  ctx.fillRect(0,py(0)-1,w,2);
+  ctx.fillRect(px(0)-1,0,2,h);
+  // ticks
+  ctx.font='7px monospace'; ctx.textAlign='center';
+  for(const t of [5,10,20,30,40]){ctx.fillText(t,px(t),py(0)+12);}
+  ctx.fillText('x',w-6,py(0)+14);
+  // curva a cada passo (pixelado)
+  ctx.fillStyle='#a78bfa';
+  for(let u=0.5;u<=RANGE;u+=RANGE/70){
+    const X=px(u),Y=py(logb(u,baseG));
+    ctx.fillRect(Math.round(X)-2,Math.round(Y)-2,5,5);
+  }
+  // linhas guia
+  ctx.fillStyle='#57e8f533';
+  ctx.fillRect(0,py(1)-1,w,2);
+  const yPoint=logb(dragX,baseG);
+  // pino vertical
+  ctx.fillStyle='#ffd94a44'; ctx.fillRect(px(dragX)-1,Math.min(py(yPoint),py(0)),3,Math.abs(py(yPoint)-py(0)));
+  // jogador (pixel drop)
+  const X=Math.round(px(dragX)), Y=Math.round(py(yPoint));
+  ctx.fillStyle='#ff5db1';
+  ctx.fillRect(X-4,Y-4,9,9);
+  ctx.fillStyle='#fff'; ctx.fillRect(X-1,Y-1,3,3);
+  // HUD
+  ctx.fillStyle='#e9e6ff'; ctx.textAlign='left'; ctx.font='8px "Press Start 2P",monospace';
+  ctx.fillText(`log${baseG}(${fmt(dragX)})=${fmt(yPoint)}`,12,20);
+  $('outB2').textContent=baseG;
+  $('resGraf').innerHTML=`▸ x=${fmt(dragX)} ⟹ log<sub>${baseG}</sub>(x)=${fmt(yPoint)} ⟹ ${baseG}^${fmt(yPoint)}=${fmt(dragX,4)} · <b>x=1 → log=0 · x≤0 → INEXISTENTE!</b> <span class="arrow">▸</span>`;
+}
+canvas.addEventListener('pointerdown',e=>{dragX=clampPx(e);draw();canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(e.buttons){dragX=clampPx(e);draw();}});
+function clampPx(e){
+  const r=canvas.getBoundingClientRect();
+  const cx=e.clientX-r.left;
+  const t=(cx-12)/(r.width-22)*RANGE;
+  return Math.max(0.5,Math.min(RANGE,t));
+}
+$('rB2').addEventListener('input',()=>{baseG=+$('rB2').value;draw();});
+window.addEventListener('resize',draw);
+canvas.addEventListener('pointerup',()=>unlock(2,'FASE 2 COMPLETA! Mapa explorado!'));
+setTimeout(draw,50);
+draw();
+
+/* ---------- FASE 3: propriedades ---------- */
+function updProp(){
+  const a=+$('rA').value,b=+$('rBx').value;
+  $('outA').textContent=a;$('outBx').textContent=b;
+  const f=v=>v.toFixed(4);
+  const rows=[
+    {n:'PRODUTO',  e:f(logb(a*b,10)), d:f(logb(a,10)+logb(b,10))},
+    {n:'QUOCIENTE',e:f(logb(a/b,10)), d:f(logb(a,10)-logb(b,10))},
+    {n:'POTENCIA', e:f(logb(a**3,10)),d:f(3*logb(a,10))},
+  ];
+  $('tbodyProp').innerHTML=rows.map(r=>{
+    const ok=Math.abs(+r.e-+r.d)<1e-3;
+    return `<tr><td><b>${r.n}</b></td><td>${r.e}</td><td>${r.d}</td>
+      <td class="${ok?'ok':'err'}">${ok?'GOL':'X'}</td></tr>`;
+  }).join('');
+}
+$('rA').addEventListener('input',updProp);
+$('rBx').addEventListener('input',updProp);
+updProp();
+
+/* ---------- FASE 4: boss ---------- */
+const perguntas=[
+  {q:'BOSS LOG: "Quanto vale log2(32)?"',opts:['4','5','8','16'],certa:1,
+   exp:'▸ CRÍTICO! 2⁵=32 → log₂(32)=5. -8 HP no boss!'},
+  {q:'BOSS LOG: "Qual valor NÃO tem log?"',opts:['100','1','0','0,1'],certa:2,
+   exp:'▸ Exato! Não existe logaritmo de 0 nem de negativos.'},
+  {q:'BOSS LOG: "log(x)+log(y) = ?" (base 10)',opts:['log(x·y)','log(x+y)','x·y','log(x/y)'],certa:0,
+   exp:'▸ Feitiço do PRODUTO: log a+log b = log(a·b)!'},
+  {q:'BOSS LOG: "ln(e³) = k. Quanto vale k?"',opts:['e³','1','9','3'],certa:3,
+   exp:'▸ log_b(bᵏ)=k → ln(e³)=3. Ataque direto!'},
+];
+let qi=0,acertos=0,hp=4;
+function renderQuiz(){
+  const p=perguntas[qi];
+  $('quizP').innerHTML=`<b>INES</b>: "${p.q.slice(10)}" <span class="arrow">▸</span>`;
+  $('quizRes').textContent='';
+  $('quizOpts').innerHTML='';
+  p.opts.forEach((o,i)=>{
+    const bt=document.createElement('button');
+    bt.className='quiz-opt'; bt.textContent='▸ '+o;
+    bt.onclick=()=>{
+      const boss=$('bossSprite');
+      boss.classList.remove('shake'); void boss.offsetWidth;
+      if(i===p.certa){
+        bt.classList.add('ok'); acertos++;
+        hp--; $('bossHp').style.width=(hp/4*100)+'%';
+        boss.classList.add('shake'); boss.textContent=hp>0?'👾':'💥';
+        $('quizRes').innerHTML='✅ '+p.exp;
+        if(hp===0){
+          $('quizRes').innerHTML='🏆 <b>BOSS LOG DERROTADO!</b> Parabéns, Mestre dos Logaritmos!';
+          unlock(4,'VOCÊ ZEROU O JOGO! MESTRE DOS LOGARITMOS!');
+          $('btnAgain').style.display='inline-block';
+          confete();
+        }
+      } else {
+        bt.classList.add('err');
+        $('quizRes').innerHTML='❌ '+p.exp;
+      }
+      setTimeout(()=>{if(hp>0){qi=(qi+1)%perguntas.length;
+        if(qi===0){hp=Math.max(hp,2); $('bossHp').style.width="50%"; acertos=0;}
+        renderQuiz();}},1500);
+    };
+    $('quizOpts').appendChild(bt);
+  });
+}
+$('btnAgain').onclick=()=>{hp=4;qi=0;acertos=0;$('bossHp').style.width='100%';
+  $('bossSprite').textContent='👾';$('btnAgain').style.display='none';renderQuiz();};
+renderQuiz();
+
+/* confete pixel */
+function confete(){
+  for(let i=0;i<40;i++){
+    const d=document.createElement('div');
+    d.style.cssText=`position:fixed;z-index:70;width:6px;height:6px;left:${50+Math.random()*20-10}%;top:50%;
+      background:${['#ffd94a','#ff5db1','#57e8f5','#4ade4a'][i%4]}`;
+    document.body.appendChild(d);
+    const dx=(Math.random()-.5)*300, dy=(Math.random()*-1)*300;
+    d.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy+260}px)`,opacity:0}],
+      {duration:900+Math.random()*600,easing:'steps(12)'}).onfinish=()=>d.remove();
+  }
+}
+</script>
+</body>
+</html>
